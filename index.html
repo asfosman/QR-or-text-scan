@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>স্মার্ট স্ক্যানার | QR ও টেক্সট, ফোন নম্বর কপি/শেয়ার</title>
-    <!-- Html5Qrcode Library -->
+    <title>ব্যাক ক্যামেরা স্ক্যানার | QR & টেক্সট</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
@@ -24,9 +22,9 @@
             padding: 18px;
         }
         .card {
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
-            background: rgba(20, 26, 36, 0.9);
+            background: rgba(20, 26, 36, 0.92);
             backdrop-filter: blur(12px);
             border-radius: 48px;
             padding: 24px 22px 32px;
@@ -67,15 +65,13 @@
         }
         .cam-controls {
             display: flex;
-            flex-wrap: wrap;
             gap: 12px;
             margin: 12px 0 8px;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: center;
         }
         .btn {
             border: none;
-            padding: 10px 16px;
+            padding: 10px 20px;
             border-radius: 60px;
             font-weight: 600;
             cursor: pointer;
@@ -89,14 +85,17 @@
         .btn-primary { background: #0f3b5c; color: white; box-shadow: 0 2px 8px #00a0ff40; }
         .btn-danger { background: #4a2a2f; color: #fbcfe8; }
         .btn-success { background: #1f5a3a; color: white; }
-        select {
+        .btn-secondary { background: #3b4a5e; color: white; }
+        textarea {
             background: #1e293b;
             border: 1px solid #3b82f6;
-            border-radius: 40px;
-            padding: 10px 16px;
+            border-radius: 24px;
+            padding: 12px;
             color: white;
-            font-weight: 500;
-            outline: none;
+            font-family: monospace;
+            font-size: 0.9rem;
+            width: 100%;
+            resize: vertical;
         }
         .result-area {
             background: #0f121bd9;
@@ -105,16 +104,12 @@
             margin: 20px 0;
             border: 1px solid #2a3448;
         }
-        .scanned-text {
+        .scanned-text-box {
             background: #05070c;
             padding: 14px;
             border-radius: 20px;
-            color: #cbd5e6;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 0.9rem;
-            border-left: 5px solid #3b82f6;
             margin: 12px 0;
+            border-left: 5px solid #3b82f6;
         }
         .phone-block {
             background: #10131f;
@@ -132,7 +127,6 @@
             color: #bbf0ff;
             word-break: break-all;
             margin: 12px 0;
-            letter-spacing: 0.5px;
         }
         .copy-big {
             width: 100%;
@@ -166,13 +160,16 @@
             justify-content: center;
             cursor: pointer;
         }
-        .no-number-msg {
-            background: #1e1f2e;
-            padding: 14px;
-            border-radius: 24px;
-            text-align: center;
-            color: #a0afcf;
-            font-size: 0.85rem;
+        .manual-section {
+            margin-top: 20px;
+            border-top: 1px solid #2a3448;
+            padding-top: 18px;
+        }
+        .flex-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
         }
         .toast {
             position: fixed;
@@ -196,67 +193,73 @@
             color: #5f6c8c;
             margin-top: 20px;
         }
-        .flex-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        @media (max-width: 500px) {
-            .card { padding: 16px; }
-            .copy-big { font-size: 1.2rem; padding: 15px; }
-        }
     </style>
 </head>
 <body>
 <div class="card">
-    <h2><i class="fas fa-qrcode"></i> কেয়ার স্ক্যানার</h2>
-    <div style="text-align:center;"><span class="sub"><i class="fas fa-camera"></i> QR কোড বা যেকোনো লেখা স্ক্যান করুন</span></div>
+    <h2><i class="fas fa-camera"></i> ব্যাক ক্যামেরা স্ক্যানার</h2>
+    <div style="text-align:center;"><span class="sub"><i class="fas fa-qrcode"></i> শুধুমাত্র পেছনের ক্যামেরা ব্যবহার করে QR কোড স্ক্যান করুন</span></div>
 
     <div class="camera-box">
         <div id="reader"></div>
     </div>
 
-    <!-- ক্যামেরা কন্ট্রোল + ক্যামেরা সিলেক্ট -->
     <div class="cam-controls">
         <button id="startBtn" class="btn btn-primary"><i class="fas fa-play"></i> স্ক্যান শুরু</button>
         <button id="stopBtn" class="btn btn-danger"><i class="fas fa-stop"></i> বন্ধ</button>
-        <select id="cameraSelect" style="flex:1; min-width: 130px;">
-            <option value="">🔍 ক্যামেরা লোড হচ্ছে...</option>
-        </select>
     </div>
 
-    <!-- ফলাফল অংশ -->
+    <!-- ফলাফল ও সিলেক্টেবল টেক্সট এলাকা -->
     <div class="result-area">
-        <div><i class="fas fa-info-circle"></i> <strong>স্ক্যান ডিটেইলস</strong></div>
-        <div class="scanned-text" id="scannedOutput">— কিছু স্ক্যান করা হয়নি —</div>
+        <div><i class="fas fa-info-circle"></i> <strong>স্ক্যানকৃত টেক্সট (সিলেক্ট করে কপি করুন)</strong></div>
+        <div class="scanned-text-box">
+            <textarea id="scannedTextArea" rows="4" placeholder="স্ক্যান করা টেক্সট এখানে দেখাবে। আপনি ইচ্ছামত অংশ সিলেক্ট করে কপি করতে পারেন।" readonly></textarea>
+            <div class="flex-row" style="justify-content: flex-end;">
+                <button id="copySelectedBtn" class="btn btn-secondary" style="padding: 6px 14px;"><i class="fas fa-copy"></i> সিলেক্টেড অংশ কপি</button>
+                <button id="copyFullBtn" class="btn btn-secondary" style="padding: 6px 14px;"><i class="fas fa-copy"></i> পুরো টেক্সট কপি</button>
+            </div>
+        </div>
         <div id="phoneActionZone">
-            <div class="no-number-msg"><i class="fas fa-mobile-alt"></i> ফোন নম্বর শনাক্ত হলে কপি ও শেয়ার বাটন দেখাবে</div>
+            <div class="no-number-msg" style="background:#1e1f2e; padding:14px; border-radius:24px; text-align:center; color:#a0afcf;">
+                <i class="fas fa-mobile-alt"></i> ফোন নম্বর শনাক্ত হলে বড় কপি ও শেয়ার বাটন দেখাবে
+            </div>
         </div>
     </div>
-    <footer><i class="fas fa-shield-alt"></i> ক্যামেরা অনুমতি দিন | ডাবল ক্লিক করুন রেজাল্ট বক্সে → রিসেট</footer>
+
+    <!-- ম্যানুয়াল টেক্সট ইনপুট -->
+    <div class="manual-section">
+        <div><i class="fas fa-keyboard"></i> <strong>ম্যানুয়ালি টেক্সট লিখুন / পেস্ট করুন</strong></div>
+        <textarea id="manualText" rows="2" placeholder="এখানে যেকোনো টেক্সট লিখুন বা পেস্ট করুন..."></textarea>
+        <div class="flex-row">
+            <button id="processManualBtn" class="btn btn-success"><i class="fas fa-arrow-right"></i> এই টেক্সট ব্যবহার করি</button>
+            <button id="clearManualBtn" class="btn btn-danger"><i class="fas fa-trash"></i> পরিষ্কার</button>
+        </div>
+    </div>
+
+    <footer><i class="fas fa-shield-alt"></i> ক্যামেরা অনুমতি দিন | পেছনের ক্যামেরা স্বয়ংক্রিয়ভাবে ব্যবহার হবে</footer>
 </div>
 
 <script>
     // DOM elements
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
-    const cameraSelect = document.getElementById('cameraSelect');
-    const scannedOutput = document.getElementById('scannedOutput');
+    const scannedTextArea = document.getElementById('scannedTextArea');
     const phoneActionZone = document.getElementById('phoneActionZone');
+    const copySelectedBtn = document.getElementById('copySelectedBtn');
+    const copyFullBtn = document.getElementById('copyFullBtn');
+    const manualText = document.getElementById('manualText');
+    const processManualBtn = document.getElementById('processManualBtn');
+    const clearManualBtn = document.getElementById('clearManualBtn');
 
     let html5QrCode = null;
     let isScanning = false;
-    let availableCameras = [];
-    let currentCameraId = null;
     let lastScannedText = '';
     let lastScanTime = 0;
-    const DUPLICATE_DELAY = 1800; // ms
+    const DUPLICATE_DELAY = 1800;
 
-    // ফোন নম্বর এক্সট্র্যাক্ট (বাংলাদেশ+আন্তর্জাতিক)
+    // ফোন নম্বর এক্সট্র্যাক্ট
     function extractPhoneNumber(text) {
         if (!text || typeof text !== 'string') return null;
-        // ৮ থেকে ১৫ ডিজিট, +, (), স্পেস, ড্যাশ
         const patterns = [
             /(\+?\d{1,4}[\s\-]?)?\(?\d{2,5}\)?[\s\-]?\d{3,4}[\s\-]?\d{3,4}/g,
             /\b\d{10,14}\b/g
@@ -270,13 +273,11 @@
                 }
             }
         }
-        // সরাসরি ডিজিটের স্ট্রিং
         let rawDigits = text.replace(/\s+/g, '').match(/\d{9,14}/);
         if (rawDigits && rawDigits[0]) return rawDigits[0];
         return null;
     }
 
-    // টোস্ট মেসেজ
     function showToast(msg, bg = "#0f5b7a") {
         let old = document.querySelector('.toast');
         if (old) old.remove();
@@ -288,16 +289,14 @@
         setTimeout(() => toast.remove(), 2800);
     }
 
-    // কপি ফাংশন
-    async function copyText(data, label = "টেক্সট") {
-        if (!data) return showToast("কপি করার কিছু নেই", "#dc2626");
+    async function copyTextToClipboard(text, label = "টেক্সট") {
+        if (!text) return showToast("কপি করার কিছু নেই", "#dc2626");
         try {
-            await navigator.clipboard.writeText(data);
-            showToast(`✅ ${label} কপি হয়েছে: ${data.substring(0, 30)}`, "#10b981");
+            await navigator.clipboard.writeText(text);
+            showToast(`✅ ${label} কপি হয়েছে: ${text.substring(0, 40)}`, "#10b981");
         } catch (err) {
-            // fallback
             let ta = document.createElement('textarea');
-            ta.value = data;
+            ta.value = text;
             document.body.appendChild(ta);
             ta.select();
             document.execCommand('copy');
@@ -306,7 +305,6 @@
         }
     }
 
-    // শেয়ার
     async function shareNumber(phone) {
         if (!phone) return showToast("নম্বর নেই", "#ef4444");
         if (navigator.share) {
@@ -315,20 +313,19 @@
                 showToast("শেয়ারিং সফল", "#4ade80");
             } catch(e) { if(e.name !== 'AbortError') showToast("শেয়ার ব্যর্থ, কপি করুন", "#f97316"); }
         } else {
-            await copyText(phone, "নম্বর");
+            await copyTextToClipboard(phone, "নম্বর");
             showToast("শেয়ার API নেই, নম্বর কপি করা হয়েছে", "#facc15");
         }
     }
 
-    // UI আপডেট যখন ফোন নম্বর পাই
     function updatePhoneUI(fullText, phoneNum) {
         if (!phoneNum) {
-            phoneActionZone.innerHTML = `<div class="no-number-msg"><i class="fas fa-search"></i> স্ক্যানকৃত টেক্সটে কোনো ফোন নম্বর পাওয়া যায়নি।</div>`;
+            phoneActionZone.innerHTML = `<div class="no-number-msg" style="background:#1e1f2e; padding:14px; border-radius:24px; text-align:center; color:#a0afcf;"><i class="fas fa-search"></i> স্ক্যানকৃত টেক্সটে কোনো ফোন নম্বর পাওয়া যায়নি।</div>`;
             return;
         }
         phoneActionZone.innerHTML = `
             <div class="phone-block">
-                <div><i class="fas fa-phone-alt"></i> শনাক্ত নম্বর</div>
+                <div><i class="fas fa-phone-alt"></i> স্বয়ংক্রিয়ভাবে শনাক্ত নম্বর</div>
                 <div class="detected-number" id="detectedPhoneSpan">${escapeHtml(phoneNum)}</div>
                 <button id="bigCopyPhoneBtn" class="copy-big"><i class="fas fa-copy fa-lg"></i> কপি করুন (বড় বাটন)</button>
                 <button id="sharePhoneBtn" class="share-btn"><i class="fas fa-share-alt"></i> শেয়ার করুন</button>
@@ -336,7 +333,7 @@
         `;
         const copyBig = document.getElementById('bigCopyPhoneBtn');
         const shareBtn = document.getElementById('sharePhoneBtn');
-        if (copyBig) copyBig.onclick = () => copyText(phoneNum, "ফোন নম্বর");
+        if (copyBig) copyBig.onclick = () => copyTextToClipboard(phoneNum, "ফোন নম্বর");
         if (shareBtn) shareBtn.onclick = () => shareNumber(phoneNum);
     }
 
@@ -357,77 +354,50 @@
         if (lastScannedText === decodedText && (now - lastScanTime) < DUPLICATE_DELAY) return;
         lastScannedText = decodedText;
         lastScanTime = now;
-
-        const displayText = decodedText.trim() || "(খালি)";
-        scannedOutput.innerHTML = `<i class="fas fa-qrcode"></i> ${escapeHtml(displayText)}`;
-        const phone = extractPhoneNumber(decodedText);
-        updatePhoneUI(decodedText, phone);
-        showToast("🎉 স্ক্যান সফল! তথ্য পাওয়া গেছে", "#2b9348");
+        updateDisplayedText(decodedText);
+        showToast("🎉 স্ক্যান সফল! টেক্সট পাওয়া গেছে", "#2b9348");
         if (window.navigator.vibrate) navigator.vibrate(80);
     }
 
-    // ক্যামেরা লিস্ট আপডেট
-    async function listCameras() {
-        try {
-            const devices = await Html5Qrcode.getCameras();
-            if (devices && devices.length) {
-                availableCameras = devices;
-                cameraSelect.innerHTML = '';
-                devices.forEach((cam, idx) => {
-                    const option = document.createElement('option');
-                    option.value = cam.id;
-                    option.textContent = cam.label || `ক্যামেরা ${idx + 1} (${cam.id.slice(0, 6)})`;
-                    cameraSelect.appendChild(option);
-                });
-                if (devices.length > 0) {
-                    currentCameraId = devices[0].id;
-                    cameraSelect.value = currentCameraId;
-                }
-            } else {
-                cameraSelect.innerHTML = '<option value="">কোনো ক্যামেরা পাওয়া যায়নি</option>';
-            }
-        } catch (err) {
-            console.warn("ক্যামেরা লিস্টিং ব্যর্থ", err);
-            cameraSelect.innerHTML = '<option value="">ক্যামেরা অ্যাক্সেস করুন</option>';
-        }
+    function updateDisplayedText(rawText) {
+        const displayText = rawText || "(খালি)";
+        scannedTextArea.value = displayText;
+        const phone = extractPhoneNumber(displayText);
+        updatePhoneUI(displayText, phone);
     }
 
-    // ক্যামেরা শুরু (নির্দিষ্ট আইডি বা ব্যাক ক্যামেরা)
-    async function startScannerWithCamera(cameraId = null) {
+    // শুধুমাত্র পেছনের ক্যামেরা ব্যবহার করে স্ক্যানার চালু
+    async function startBackCameraScanner() {
         if (isScanning) {
-            await stopScannerInternal();
+            await stopScanner();
         }
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
         }
-        const config = { fps: 12, qrbox: { width: 280, height: 280 }, aspectRatio: 1.0 };
+        const config = {
+            fps: 12,
+            qrbox: { width: 280, height: 280 },
+            aspectRatio: 1.0
+        };
         try {
-            let cameraToUse = cameraId;
-            if (!cameraToUse && availableCameras.length) {
-                // চেষ্টা করি ব্যাক ক্যামেরা খুঁজতে
-                const backCam = availableCameras.find(cam => cam.label.toLowerCase().includes('back') || cam.label.toLowerCase().includes('environment'));
-                cameraToUse = backCam ? backCam.id : availableCameras[0].id;
-                currentCameraId = cameraToUse;
-                if(cameraSelect) cameraSelect.value = cameraToUse;
-            }
-            if (!cameraToUse) {
-                // যদি লিস্ট না পাওয়া যায়, facingMode ব্যবহার করি
-                await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (errMsg)=>{});
-                isScanning = true;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                showToast("📷 ক্যামেরা চালু (ডিফল্ট)", "#2c7da0");
-                return;
-            }
-            await html5QrCode.start(cameraToUse, config, onScanSuccess, (errMsg)=>{});
+            // শুধুমাত্র environment (পেছনের ক্যামেরা) ব্যবহার করব
+            await html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                (errorMessage) => {
+                    // স্ক্যান ব্যর্থ হলে কিছু করব না, শুধু কনসোল এড়াতে
+                    // console.log(errorMessage);
+                }
+            );
             isScanning = true;
             startBtn.disabled = true;
             stopBtn.disabled = false;
-            showToast("✅ ক্যামেরা সক্রিয়, স্ক্যান করুন", "#0f6b3a");
+            showToast("📷 পেছনের ক্যামেরা চালু হয়েছে, QR কোড স্ক্যান করুন", "#2c7da0");
         } catch (err) {
-            console.error("Start error:", err);
-            let errorMsg = "ক্যামেরা চালু হয়নি। অনুমতি দিন অথবা ভিন্ন ক্যামেরা নির্বাচন করুন।";
-            if (err.toString().includes("NotAllowedError")) errorMsg = "🔴 ক্যামেরা অনুমতি প্রত্যাখ্যান! সেটিংস থেকে অনুমতি দিন।";
+            console.error("ক্যামেরা শুরু ত্রুটি:", err);
+            let errorMsg = "পেছনের ক্যামেরা চালু করা যায়নি। অনুমতি দিন অথবা আপনার ডিভাইসে ব্যাক ক্যামেরা নেই।";
+            if (err.toString().includes("NotAllowedError")) errorMsg = "🔴 ক্যামেরা অনুমতি প্রত্যাখ্যান! অনুমতি দিন।";
             else if (err.toString().includes("NotFoundError")) errorMsg = "❌ কোনো ক্যামেরা খুঁজে পাওয়া যায়নি।";
             showToast(errorMsg, "#b91c1c");
             isScanning = false;
@@ -436,7 +406,7 @@
         }
     }
 
-    async function stopScannerInternal() {
+    async function stopScanner() {
         if (html5QrCode && isScanning) {
             try {
                 await html5QrCode.stop();
@@ -445,81 +415,52 @@
         isScanning = false;
         startBtn.disabled = false;
         stopBtn.disabled = true;
-    }
-
-    // শুরু বাটন: ব্যবহারকারী সিলেক্ট করা ক্যামেরা বা লিস্ট থেকে
-    async function startScan() {
-        if (isScanning) {
-            showToast("স্ক্যানার চলছে, আগে বন্ধ করুন", "#f59e0b");
-            return;
-        }
-        // আগে ক্যামেরা লিস্ট রিফ্রেশ
-        await listCameras();
-        let selectedCamId = cameraSelect.value;
-        if (selectedCamId && selectedCamId !== "") {
-            currentCameraId = selectedCamId;
-            await startScannerWithCamera(currentCameraId);
-        } else {
-            // লিস্ট না থাকলে facingMode চেষ্টা
-            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-            try {
-                await html5QrCode.start({ facingMode: "environment" }, { fps: 12, qrbox: { width: 280, height: 280 } }, onScanSuccess, ()=>{});
-                isScanning = true;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                showToast("📸 ক্যামেরা চালু (ডিফল্ট মোড)", "#3b82f6");
-                // আবার ক্যামেরা লিস্ট রিফ্রেশ
-                setTimeout(listCameras, 1000);
-            } catch(err) {
-                showToast("ক্যামেরা শুরু ব্যর্থ: অনুমতি দিন", "#dc2626");
-            }
-        }
-    }
-
-    async function stopScan() {
-        await stopScannerInternal();
         showToast("ক্যামেরা বন্ধ করা হয়েছে", "#f97316");
     }
 
-    // রেজাল্ট বক্স ডাবল ক্লিক রিসেট
-    const resultBox = document.querySelector('.result-area');
-    resultBox.addEventListener('dblclick', () => {
-        if (!isScanning) {
-            scannedOutput.innerHTML = '— কিছুই স্ক্যান করা হয়নি —';
-            phoneActionZone.innerHTML = `<div class="no-number-msg"><i class="fas fa-mobile-alt"></i> ফোন নাম্বার শনাক্ত হলে কপি ও শেয়ার অপশন আসবে</div>`;
-            lastScannedText = '';
-            showToast("রেজাল্ট রিসেট করা হয়েছে", "#6c757d");
-        } else {
-            showToast("স্ক্যান চলছে, আগে বন্ধ করুন রিসেট করতে", "#eab308");
+    // ম্যানুয়াল টেক্সট প্রসেস
+    function processManualText() {
+        let userText = manualText.value.trim();
+        if (userText === "") {
+            showToast("দয়া করে কিছু টেক্সট লিখুন বা পেস্ট করুন", "#f97316");
+            return;
         }
-    });
+        updateDisplayedText(userText);
+        showToast("ম্যানুয়াল টেক্সট সেট করা হয়েছে", "#3b82f6");
+    }
 
-    // ক্যামেরা সিলেক্ট চেঞ্জ করলে স্ক্যান চললে বন্ধ করে নতুন ক্যামেরা শুরু?
-    cameraSelect.addEventListener('change', async (e) => {
-        const newCamId = e.target.value;
-        if (!newCamId) return;
-        if (isScanning) {
-            await stopScannerInternal();
-            currentCameraId = newCamId;
-            await startScannerWithCamera(currentCameraId);
-        } else {
-            currentCameraId = newCamId;
-            showToast(`ক্যামেরা সিলেক্ট করা হয়েছে: ${newCamId.slice(0,10)}`, "#4b5563");
+    // কপি সিলেক্টেড অংশ
+    function copySelected() {
+        const textarea = scannedTextArea;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        if (start === end) {
+            showToast("কোনো টেক্সট সিলেক্ট করা হয়নি। পুরো টেক্সট কপি করতে নিচের বাটন ব্যবহার করুন।", "#facc15");
+            return;
         }
-    });
+        const selected = textarea.value.substring(start, end);
+        copyTextToClipboard(selected, "সিলেক্টেড টেক্সট");
+    }
 
-    startBtn.addEventListener('click', startScan);
-    stopBtn.addEventListener('click', stopScan);
+    function copyFull() {
+        const fullText = scannedTextArea.value;
+        if (!fullText) return showToast("কপি করার মতো টেক্সট নেই", "#dc2626");
+        copyTextToClipboard(fullText, "পুরো টেক্সট");
+    }
 
-    // পেজ লোডে ক্যামেরা লিস্ট নেওয়া ও স্টপ বাটন ডিজেবল
-    window.addEventListener('load', async () => {
+    // ইভেন্ট লিসেনার
+    startBtn.addEventListener('click', startBackCameraScanner);
+    stopBtn.addEventListener('click', stopScanner);
+    copySelectedBtn.addEventListener('click', copySelected);
+    copyFullBtn.addEventListener('click', copyFull);
+    processManualBtn.addEventListener('click', processManualText);
+    clearManualBtn.addEventListener('click', () => { manualText.value = ''; showToast("ম্যানুয়াল ফিল্ড পরিষ্কার", "#6c757d"); });
+
+    window.addEventListener('load', () => {
         stopBtn.disabled = true;
-        await listCameras();
-        // ক্যামেরা প্রিভিউ অটো স্টার্ট না করে, ইউজার স্টার্ট করবে
-        showToast("👉 স্ক্যান শুরু বাটন চাপুন", "#2c7da0");
+        showToast("👉 'স্ক্যান শুরু' বাটন চাপুন - শুধু পেছনের ক্যামেরা ব্যবহার হবে", "#2c7da0");
     });
 
-    // পেজ আনলোডে ক্যামেরা বন্ধ
     window.addEventListener('beforeunload', async () => {
         if (html5QrCode && isScanning) {
             try { await html5QrCode.stop(); } catch(e) {}
